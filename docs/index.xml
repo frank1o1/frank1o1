@@ -3,9 +3,16 @@
         <title>我的全新 Hugo 网站</title>
         <link>https://frank1o1.github.io/frank1o1/</link>
         <description>我的全新 Hugo 网站</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Fri, 04 Mar 2022 14:57:04 &#43;0800</lastBuildDate>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Wed, 09 Mar 2022 10:27:30 &#43;0800</lastBuildDate>
             <atom:link href="https://frank1o1.github.io/frank1o1/index.xml" rel="self" type="application/rss+xml" />
         <item>
+    <title>GoLang面试题目解析</title>
+    <link>https://frank1o1.github.io/frank1o1/posts/first/</link>
+    <pubDate>Wed, 09 Mar 2022 10:27:30 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>https://frank1o1.github.io/frank1o1/posts/first/</guid>
+    <description><![CDATA[交替打印数字和字母 问题描述 使用两个 goroutine 交替打印序列，一个 goroutine 打印数字， 另外一个 goroutine 打印字母， 最终效果如下： 12AB34CD56EF78GH910IJ1112KL1314MN1516OP1718QR1920ST2122UV2324WX2526YZ2728 package main import ( &#34;fmt&#34; ) func print(value interface{}, chans chan int8, types int8) { switch value.(type) { case]]></description>
+</item><item>
     <title>About</title>
     <link>https://frank1o1.github.io/frank1o1/posts/about/</link>
     <pubDate>Fri, 04 Mar 2022 14:57:04 &#43;0800</pubDate>
