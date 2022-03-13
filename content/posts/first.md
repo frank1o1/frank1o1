@@ -301,3 +301,264 @@ type Store struct {
 }
 ```
 
+### 为sync.WaitGroup中wait函数实现WaitTimeout功能
+
+**问题描述**
+
+```go
+func main() {
+	wg := sync.WaitGroup{}
+	c := make(chan struct{})
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(num int, close <-chan struct{}) {
+			defer wg.Done()
+			<-close
+			fmt.Println(num)
+		}(i, c)
+	}
+	if WaitTimeout(&wg, time.Second*5) {
+		close(c)
+		fmt.Println("timeout exist")
+	}
+	time.Sleep(time.Second * 10)
+}
+
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool { // 要求手写代码
+// 要求sync.WaitGroup支持timeout功能 
+// 如果timeout到了超时时间返回true 
+// 如果WaitGroup自然结束返回false
+}
+```
+
+```go
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	control := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(control)
+	}()
+	for {
+		select {
+		case <-time.After(timeout):
+			return true
+		case <-control:
+			return false
+		}
+	}
+}
+```
+
+## 写出以下打印内容
+
+**问题描述**
+
+```go
+package main
+
+import "fmt"
+
+const (
+	a = iota
+	b
+)
+const (
+	name = "menglu"
+	age  = 11
+	c    = iota
+	d
+)
+
+func main() {
+	fmt.Println(a)
+	fmt.Println(b)
+	fmt.Println(c)
+	fmt.Println(d)
+}
+```
+
+```
+0
+1
+2
+3
+```
+
+**解析**
+
+1、每次遇到const时，iota都会初始化为0，
+
+2、iota 在下一行增长，而不是立即取得它的引用
+
+## 写出以下打印结果
+
+**问题描述**
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Student struct {
+	Name string
+}
+
+func main() {
+	fmt.Println(&Student{Name: "menglu"} == &Student{Name: "menglu"}) // false
+	fmt.Println(Student{Name: "menglu"} == Student{Name: "menglu"})   // true
+}
+```
+
+**解析**
+
+指针类型比较的是指针地址，结构体比较的是结构体内每个属性的值
+
+## 写出以下代码的问题
+
+**问题描述**
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println([...]string{"1"} == [...]string{"1"})
+	fmt.Println([]string{"1"} == []string{"1"}) // 切片不能直接进行比较
+}
+```
+
+**解析**
+
+数组只能与相同类型且长度相等的数组进行比较，切片不能直接进行比较
+
+## 下面代码写法有什么问题
+
+**问题描述**
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type Student struct {
+	Age int
+}
+
+func main() {
+	kv := map[string]Student{"menglu": {Age: 21}}
+	kv["menglu"].Age = 22  // map不能对value为结构体类型的属性赋值，除非value为结构体指针类型
+	s := []Student{{Age: 21}}
+	s[0].Age = 22
+	fmt.Println(kv, s)
+}
+
+```
+
+**解析**
+
+map中struct的字段不能直接寻址，map的底层可能由于扩容造成数据的迁移
+
+## 下面代码输出什么内容
+
+**问题描述**
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+var mu sync.Mutex
+var chain string
+
+func main() {
+	chain = "main"
+	A()
+	fmt.Println(chain)
+
+}
+func A() {
+	mu.Lock()
+	defer mu.Unlock()
+	chain = chain + " --> A"
+	B()
+}
+func B() {
+	chain = chain + " --> B"
+	C()
+}
+func C() {
+	mu.Lock()
+	defer mu.Unlock()
+	chain = chain + " --> C"
+}
+
+```
+
+- A: 不能编译
+- B:输出main-->A-->B-->C 
+-  C:输出main
+-  ~~D: panic，死锁~~
+
+**解析**
+
+Mutex是互斥锁
+
+## 下面代码输出什么内容
+
+**问题描述**
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+var mu sync.RWMutex
+var count int
+
+func main() {
+	go A()
+	time.Sleep(2 * time.Second)
+	mu.Lock()
+	defer mu.Unlock()
+	count++
+	fmt.Println(count)
+}
+func A() {
+	mu.RLock()
+	defer mu.RUnlock()
+	B()
+}
+func B() {
+	time.Sleep(5 * time.Second)
+	C()
+}
+func C() {
+	mu.RLock()
+	defer mu.RUnlock()
+}
+
+```
+
+- A: 不能编译
+-  B:输出1
+-  C: 程序hang住 
+-  ~~D: panic，死锁~~
+
+**解析**
+
+读写锁当有一个协程在等待写锁时，其他协程是不能获得读锁的，而在 A 和 C 中同一个调用链中间需要让出 读锁，让写锁优先获取，而 A 的读锁又要求 C 调用完成，因此死锁。
+
